@@ -157,6 +157,8 @@ class Panda:
   SAFETY_FAW = 26
   SAFETY_BODY = 27
   SAFETY_HYUNDAI_CANFD = 28
+  SAFETY_HONDA_BODY = 100
+  SAFETY_HONDA_BODY_TEST = 101
 
   SERIAL_DEBUG = 0
   SERIAL_ESP = 1
@@ -449,7 +451,6 @@ class Panda:
     # unlock flash
     logging.warning("flash: unlocking")
     handle.controlWrite(Panda.REQUEST_IN, 0xb1, 0, 0, b'')
-
     # erase sectors
     logging.warning(f"flash: erasing sectors 1 - {last_sector}")
     for i in range(1, last_sector + 1):

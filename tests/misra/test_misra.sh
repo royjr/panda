@@ -25,7 +25,7 @@ fi
 #python tests/misra/cppcheck/addons/misra.py -generate-table > tests/misra/coverage_table
 
 printf "\nPANDA F4 CODE\n"
-$CPPCHECK -DPANDA -DSTM32F4 -UPEDAL -DCAN3 -DUID_BASE \
+$CPPCHECK -DPANDA -DSTM32F4 -UPEDAL -DCAN3 -DUID_BASE\
           --suppressions-list=$DIR/suppressions.txt --suppress=*:*inc/* \
           -I $PANDA_DIR/board/ --dump --enable=all --inline-suppr --force \
           $PANDA_DIR/board/main.c 2>/tmp/misra/cppcheck_f4_output.txt
@@ -36,6 +36,17 @@ $MISRA $PANDA_DIR/board/main.c.dump 2> /tmp/misra/misra_f4_output.txt || true
 cppcheck_f4_output=$( cat /tmp/misra/cppcheck_f4_output.txt | grep -v ": information: " ) || true
 misra_f4_output=$( cat /tmp/misra/misra_f4_output.txt | grep -v ": information: " ) || true
 
+printf "\nPANDA F4 GATEWAY CODE\n"
+$CPPCHECK -DPANDA -DSTM32F4 -UPEDAL -DCAN3 -DUID_BASE -DGATEWAY\
+          --suppressions-list=$DIR/suppressions.txt --suppress=*:*inc/* \
+          -I $PANDA_DIR/board/ --dump --enable=all --inline-suppr --force \
+          $PANDA_DIR/board/main.c 2>/tmp/misra/cppcheck_f4_gateway_output.txt
+
+$MISRA $PANDA_DIR/board/main.c.dump 2> /tmp/misra/misra_f4_gateway_output.txt || true
+
+# strip (information) lines
+cppcheck_f4_gateway_output=$( cat /tmp/misra/cppcheck_f4_gateway_output.txt | grep -v ": information: " ) || true
+misra_f4_gateway_output=$( cat /tmp/misra/misra_f4_gateway_output.txt | grep -v ": information: " ) || true
 
 printf "\nPANDA H7 CODE\n"
 $CPPCHECK -DPANDA -DSTM32H7 -UPEDAL -DUID_BASE \
@@ -67,6 +78,14 @@ then
   echo "Failed! found Misra violations in panda F4 code:"
   echo "$misra_f4_output"
   echo "$cppcheck_f4_output"
+  ERROR_CODE=1
+fi
+
+if [[ -n "$misra_f4_gateway_output" ]] || [[ -n "$cppcheck_f4_gateway_output" ]]
+then
+  echo "Failed! found Misra violations in panda F4 gateway code:"
+  echo "$misra_f4_gateway_output"
+  echo "$cppcheck_f4_gateway_output"
   ERROR_CODE=1
 fi
 

@@ -1,6 +1,9 @@
 // /////////// //
 // White Panda //
 // /////////// //
+#ifdef GATEWAY
+#define CAN_FLASH_TRIGGER 0x800
+#endif
 
 void white_enable_can_transceiver(uint8_t transceiver, bool enabled) {
   switch (transceiver){
@@ -20,7 +23,7 @@ void white_enable_can_transceiver(uint8_t transceiver, bool enabled) {
 }
 
 void white_enable_can_transceivers(bool enabled) {
-  uint8_t t1 = enabled ? 1U : 2U;  // leave transceiver 1 enabled to detect CAN ignition
+  uint8_t t1 = enabled ? 1U : 3U;  // leave transceivers 1 and 2 enabled
   for(uint8_t i=t1; i<=3U; i++) {
     white_enable_can_transceiver(i, enabled);
   }

@@ -44,6 +44,25 @@ build_projects["panda"] = {
   ],
 }
 
+build_projects["panda_gateway"] = {
+  "MAIN": "main.c",
+  "STARTUP_FILE": "stm32fx/startup_stm32f413xx.s",
+  "LINKER_SCRIPT": "stm32fx/stm32f4_flash.ld",
+  "APP_START_ADDRESS": "0x8004000",
+  "PROJECT_FLAGS": [
+    "-mcpu=cortex-m4",
+    "-mhard-float",
+    "-DSTM32F4",
+    "-DSTM32F413xx",
+    "-mfpu=fpv4-sp-d16",
+    "-fsingle-precision-constant",
+    "-Os",
+    "-g",
+    "-DPANDA",
+    "-DGATEWAY",
+  ],
+}
+
 build_projects["panda_h7"] = {
   "MAIN": "main.c",
   "STARTUP_FILE": "stm32h7/startup_stm32h7x5xx.s",

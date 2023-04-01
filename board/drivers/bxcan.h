@@ -3,6 +3,7 @@
 //       CAN3_TX, CAN3_RX0, CAN3_SCE
 
 CAN_TypeDef *cans[] = {CAN1, CAN2, CAN3};
+bool can_flash_allowed = true;
 
 bool can_set_speed(uint8_t can_number) {
   bool ret = true;
@@ -176,6 +177,7 @@ void can_rx(uint8_t can_number) {
 
     // can is live
     pending_can_live = 1;
+    can_last = uptime_cnt;
 
     // add to my fifo
     CANPacket_t to_push;
@@ -189,6 +191,29 @@ void can_rx(uint8_t can_number) {
     WORD_TO_BYTE_ARRAY(&to_push.data[0], CAN->sFIFOMailBox[0].RDLR);
     WORD_TO_BYTE_ARRAY(&to_push.data[4], CAN->sFIFOMailBox[0].RDHR);
     can_set_checksum(&to_push);
+    
+// TODO: put back when canflasher is working
+// #ifdef GATEWAY
+//     if ((can_number == 0) && (to_push.addr == CAN_FLASH_TRIGGER) && can_flash_allowed) {
+//       // softloader entry
+//       if (CAN->sFIFOMailBox[0].RDLR == 0xdeadface) {
+//         if (CAN->sFIFOMailBox[0].RDHR == 0x0ab00b1e) {
+//           enter_bootloader_mode = ENTER_SOFTLOADER_MAGIC;
+//           NVIC_SystemReset();
+//         } else if (CAN->sFIFOMailBox[0].RDHR == 0x02b00b1e) {
+//           enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+//           NVIC_SystemReset();
+//         } else {
+//           print("Failed entering Softloader or Bootloader\n");
+//         }
+//       }
+//       else {
+//         // CAN conflict. STOP
+//         // TODO: Signal this to the canflasher
+//         can_flash_allowed = false;
+//       }
+//     }
+// #endif
 
     // forwarding (panda only)
     int bus_fwd_num = safety_fwd_hook(bus_number, &to_push);
@@ -211,7 +236,7 @@ void can_rx(uint8_t can_number) {
     safety_rx_invalid += safety_rx_hook(&to_push) ? 0U : 1U;
     ignition_can_hook(&to_push);
 
-    current_board->set_led(LED_BLUE, true);
+    // current_board->set_led(LED_BLUE, true);
     rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
 
     // next

@@ -24,6 +24,9 @@
 #include "safety/safety_hyundai_canfd.h"
 #endif
 
+// body harness
+#include "safety/safety_honda_body.h"
+
 // from cereal.car.CarParams.SafetyModel
 #define SAFETY_SILENT 0U
 #define SAFETY_HONDA_NIDEC 1U
@@ -51,6 +54,9 @@
 #define SAFETY_FAW 26U
 #define SAFETY_BODY 27U
 #define SAFETY_HYUNDAI_CANFD 28U
+
+// body harness
+#define SAFETY_HONDA_BODY 100U
 
 uint16_t current_safety_mode = SAFETY_SILENT;
 uint16_t current_safety_param = 0;
@@ -315,6 +321,7 @@ const safety_hook_config safety_hook_registry[] = {
   {SAFETY_ALLOUTPUT, &alloutput_hooks},
   {SAFETY_FORD, &ford_hooks},
 #endif
+  {SAFETY_HONDA_BODY, &honda_body_hooks},
 };
 
 int set_safety_hooks(uint16_t mode, uint16_t param) {

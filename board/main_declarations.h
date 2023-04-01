@@ -14,6 +14,7 @@ void pwm_set(TIM_TypeDef *TIM, uint8_t channel, uint8_t percentage);
 uint8_t hw_type = 0;
 const board *current_board;
 uint32_t uptime_cnt = 0;
+uint32_t  usb_uptime_cnt = 0;
 bool green_led_enabled = false;
 
 // heartbeat state
@@ -24,6 +25,7 @@ bool heartbeat_disabled = false;            // set over USB
 // Enter deep sleep mode
 bool deepsleep_allowed = false;
 bool ignition_seen = false;
+uint32_t can_last = 0;
 
 // siren state
 bool siren_enabled = false;

@@ -162,7 +162,7 @@ void can_clear(can_ring *q) {
 // Panda:       Bus 0=CAN1   Bus 1=CAN2   Bus 2=CAN3
 bus_config_t bus_config[] = {
   { .bus_lookup = 0U, .can_num_lookup = 0U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
-  { .bus_lookup = 1U, .can_num_lookup = 1U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 1U, .can_num_lookup = 1U, .can_speed = 1250U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
   { .bus_lookup = 2U, .can_num_lookup = 2U, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
   { .bus_lookup = 0xFFU, .can_num_lookup = 0xFFU, .can_speed = 333U, .can_data_speed = 333U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
 };
@@ -217,6 +217,13 @@ void ignition_can_hook(CANPacket_t *to_push) {
     }
 
   }
+  if (bus == 1) {
+    // Civic Bosch B-CAN meter ignition switch state
+    if ((addr == 0x12F97C50) && (len == 1)) {
+      ignition_can = (GET_BYTE(to_push, 0) & 0x10U) != 0U;
+      ignition_can_cnt = 0U;
+    }    
+  }
 }
 
 bool can_tx_check_min_slots_free(uint32_t min) {
@@ -257,6 +264,7 @@ void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook) {
     }
   } else {
     safety_tx_blocked += 1U;
+    to_push->returned = 0U;
     to_push->rejected = 1U;
 
     // data changed

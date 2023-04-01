@@ -30,6 +30,10 @@ void set_power_save_state(int state) {
 
     current_board->enable_can_transceivers(enable);
 
+    #ifdef GATEWAY
+    enable = false;
+    #endif
+
     // Switch EPS/GPS
     if (enable) {
       current_board->set_gps_mode(GPS_ENABLED);

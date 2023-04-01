@@ -122,7 +122,12 @@ bool is_car_safety_mode(uint16_t mode) {
   return (mode != SAFETY_SILENT) &&
          (mode != SAFETY_NOOUTPUT) &&
          (mode != SAFETY_ALLOUTPUT) &&
+         (mode != SAFETY_HONDA_BODY) &&
          (mode != SAFETY_ELM327);
+}
+
+bool is_gateway_safety_mode(uint16_t mode) {
+  return (mode == SAFETY_HONDA_BODY);
 }
 
 // ***************************** main code *****************************
@@ -190,6 +195,11 @@ void tick_handler(void) {
         heartbeat_disabled = false;
       }
 
+      // disable heartbeat while in a gateway safety mode
+      if (is_gateway_safety_mode(current_safety_mode)) {
+        heartbeat_disabled = true;
+      }
+
       if (siren_countdown > 0U) {
         siren_countdown -= 1U;
       }
@@ -229,9 +239,9 @@ void tick_handler(void) {
             heartbeat_lost = true;
           }
 
-          if (current_safety_mode != SAFETY_SILENT) {
-            set_safety_mode(SAFETY_SILENT, 0U);
-          }
+          // if (current_safety_mode != SAFETY_SILENT) {
+          //   set_safety_mode(SAFETY_SILENT, 0U);
+          // }
 
           if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
             set_power_save_state(POWER_SAVE_STATUS_ENABLED);
@@ -259,10 +269,20 @@ void tick_handler(void) {
         ignition_can = false;
       }
 
+      if (!can_live && (ignition_can_cnt > 10U) && !ignition_can && (power_save_status == POWER_SAVE_STATUS_DISABLED)){
+        set_power_save_state(POWER_SAVE_STATUS_ENABLED);
+      }
+      if (can_live && (power_save_status == POWER_SAVE_STATUS_ENABLED)){
+        set_power_save_state(POWER_SAVE_STATUS_DISABLED);
+      }
+
       // on to the next one
       uptime_cnt += 1U;
       safety_mode_cnt += 1U;
       ignition_can_cnt += 1U;
+      if (usb_enumerated) {
+        usb_uptime_cnt = uptime_cnt;
+      }
 
       // synchronous safety check
       safety_tick(current_rx_checks);
@@ -358,8 +378,8 @@ int main(void) {
 
   microsecond_timer_init();
 
-  // init to SILENT and can silent
-  set_safety_mode(SAFETY_SILENT, 0U);
+  // init to HONDA BODY and can live
+  set_safety_mode(SAFETY_HONDA_BODY, 0U);
 
   // enable CAN TXs
   current_board->enable_can_transceivers(true);
@@ -388,21 +408,22 @@ int main(void) {
 
   for (cnt=0;;cnt++) {
     if (power_save_status == POWER_SAVE_STATUS_DISABLED) {
+      int color = ((can_last == 0U) || ((uptime_cnt - can_last) > 1U)) ? LED_RED : LED_BLUE;
       #ifdef DEBUG_FAULTS
       if (fault_status == FAULT_STATUS_NONE) {
       #endif
         // useful for debugging, fade breaks = panda is overloaded
         for (uint32_t fade = 0U; fade < MAX_LED_FADE; fade += 1U) {
-          current_board->set_led(LED_RED, true);
+          current_board->set_led(color, true);
           delay(fade >> 4);
-          current_board->set_led(LED_RED, false);
+          current_board->set_led(color, false);
           delay((MAX_LED_FADE - fade) >> 4);
         }
 
         for (uint32_t fade = MAX_LED_FADE; fade > 0U; fade -= 1U) {
-          current_board->set_led(LED_RED, true);
+          current_board->set_led(color, true);
           delay(fade >> 4);
-          current_board->set_led(LED_RED, false);
+          current_board->set_led(color, false);
           delay((MAX_LED_FADE - fade) >> 4);
         }
 
@@ -414,27 +435,34 @@ int main(void) {
           delay(512000U);
         }
       #endif
-    } else {
-      if (deepsleep_allowed && !usb_enumerated && !check_started() && ignition_seen && (heartbeat_counter > 20U)) {
-        usb_soft_disconnect(true);
-        fan_set_power(0U);
-        NVIC_DisableIRQ(TICK_TIMER_IRQ);
-        delay(512000U);
+    } 
+    else {
+      // Deepsleep if No CAN or USB for 1 minute 
+      if (!check_started() && !usb_enumerated && ((uptime_cnt - usb_uptime_cnt) > 60U) && ((uptime_cnt - can_last) > 60U)) {
+            set_power_save_state(POWER_SAVE_STATUS_ENABLED);
+            usb_soft_disconnect(true);
+            fan_set_power(0U);
+            NVIC_DisableIRQ(TICK_TIMER_IRQ);
+            delay(512000U);
 
-        // Init IRQs for CAN transceiver and ignition line
-        exti_irq_init();
+            // Init IRQs for CAN transceiver(s) and ignition line
+            exti_irq_init();
 
-        // Init RTC Wakeup event on EXTI22
-        REGISTER_INTERRUPT(RTC_WKUP_IRQn, RTC_WKUP_IRQ_Handler, 10U, FAULT_INTERRUPT_RATE_EXTI)
-        rtc_wakeup_init();
+            // Init RTC Wakeup event on EXTI22
+            REGISTER_INTERRUPT(RTC_WKUP_IRQn, RTC_WKUP_IRQ_Handler, 10U, FAULT_INTERRUPT_RATE_EXTI)
+            rtc_wakeup_init();
 
-        // STOP mode
-        SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-      }
+            // Turn off LEDs
+            current_board->set_led(LED_RED, false);
+            current_board->set_led(LED_GREEN, false);
+            current_board->set_led(LED_BLUE, false);
+
+            // STOP mode
+            SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+          }
       __WFI();
       SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
+      }
     }
-  }
-
   return 0;
 }

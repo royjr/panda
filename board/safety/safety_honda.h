@@ -339,14 +339,14 @@ static int honda_tx_hook(CANPacket_t *to_send) {
   }
 
   // STEER: safety check
-  if ((addr == 0xE4) || (addr == 0x194)) {
-    if (!controls_allowed) {
-      bool steer_applied = GET_BYTE(to_send, 0) | GET_BYTE(to_send, 1);
-      if (steer_applied) {
-        tx = 0;
-      }
-    }
-  }
+  // if ((addr == 0xE4) || (addr == 0x194)) {
+  //   if (!controls_allowed) {
+  //     bool steer_applied = GET_BYTE(to_send, 0) | GET_BYTE(to_send, 1);
+  //     if (steer_applied) {
+  //       tx = 0;
+  //     }
+  //   }
+  // }
 
   // Bosch supplemental control check
   if (addr == 0xE5) {

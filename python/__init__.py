@@ -248,6 +248,7 @@ class Panda:
   FLAG_CHRYSLER_RAM_HD = 2
 
   FLAG_SUBARU_GEN2 = 1
+  FLAG_SUBARU_LONG = 2
 
   FLAG_GM_HW_CAM = 1
   FLAG_GM_HW_CAM_LONG = 2
@@ -279,6 +280,8 @@ class Panda:
     if self._handle_open:
       self._handle.close()
       self._handle_open = False
+      if self._context is not None:
+        self._context.close()
 
   def connect(self, claim=True, wait=False):
     self.close()
@@ -286,9 +289,9 @@ class Panda:
     self._handle = None
     while self._handle is None:
       # try USB first, then SPI
-      self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim)
+      self._context, self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim)
       if self._handle is None:
-        self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
+        self._context, self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
       if not wait:
         break
 
@@ -364,7 +367,7 @@ class Panda:
         err = f"panda protocol mismatch: expected {handle.PROTOCOL_VERSION}, got {spi_version}. reflash panda"
         raise PandaProtocolMismatch(err)
 
-    return handle, spi_serial, bootstub, None
+    return None, handle, spi_serial, bootstub, None
 
   @classmethod
   def usb_connect(cls, serial, claim=True):
@@ -406,10 +409,10 @@ class Panda:
     else:
       context.close()
 
-    return usb_handle, usb_serial, bootstub, bcd
+    return context, usb_handle, usb_serial, bootstub, bcd
 
   @classmethod
-  def list(cls):
+  def list(cls): # noqa: A003
     ret = cls.usb_list()
     ret += cls.spi_list()
     return list(set(ret))
@@ -435,7 +438,7 @@ class Panda:
 
   @classmethod
   def spi_list(cls):
-    _, serial, _, _ = cls.spi_connect(None, ignore_version=True)
+    _, _, serial, _, _ = cls.spi_connect(None, ignore_version=True)
     if serial is not None:
       return [serial, ]
     return []

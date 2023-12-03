@@ -1,15 +1,15 @@
-void safety_tick_current_rx_checks() {
-  safety_tick(current_rx_checks);
+void safety_tick_current_safety_config() {
+  safety_tick(&current_safety_config);
 }
 
-bool addr_checks_valid() {
-  if (current_rx_checks->len <= 0) {
+bool safety_config_valid() {
+  if (current_safety_config.rx_checks_len <= 0) {
     printf("missing RX checks\n");
     return false;
   }
 
-  for (int i = 0; i < current_rx_checks->len; i++) {
-    const AddrCheckStruct addr = current_rx_checks->check[i];
+  for (int i = 0; i < current_safety_config.rx_checks_len; i++) {
+    const RxCheck addr = current_safety_config.rx_checks[i];
     bool valid = addr.msg_seen && !addr.lagging && addr.valid_checksum && (addr.wrong_counters < MAX_WRONG_COUNTERS) && addr.valid_quality_flag;
     if (!valid) {
       printf("i %d seen %d lagging %d valid checksum %d wrong counters %d valid quality flag %d\n", i, addr.msg_seen, addr.lagging, addr.valid_checksum, addr.wrong_counters, addr.valid_quality_flag);
@@ -149,6 +149,11 @@ int get_desired_angle_last(void){
   return desired_angle_last;
 }
 
+void set_angle_meas(int min, int max){
+  angle_meas.min = min;
+  angle_meas.max = max;
+}
+
 int get_angle_meas_min(void){
   return angle_meas.min;
 }
@@ -176,6 +181,10 @@ void set_honda_fwd_brake(bool c){
   honda_fwd_brake = c;
 }
 
+bool get_honda_fwd_brake(void){
+  return honda_fwd_brake;
+}
+
 void init_tests(void){
   // get HW_TYPE from env variable set in test.sh
   if (getenv("HW_TYPE")) {
@@ -187,10 +196,6 @@ void init_tests(void){
   ts_steer_req_mismatch_last = 0;
   valid_steer_req_count = 0;
   invalid_steer_req_count = 0;
-
-  // car-specific stuff
-  honda_fwd_brake = false;
-  tesla_stock_aeb = false;
 }
 
 void set_gmlan_digital_output(int to_set){

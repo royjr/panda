@@ -51,7 +51,6 @@ const CanMsg HYUNDAI_CANFD_HDA1_TX_MSGS[] = {
   {0x1A0, 0, 32}, // CRUISE_INFO
   {0x1CF, 2, 8},  // CRUISE_BUTTON
   {0x1E0, 0, 16}, // LFAHDA_CLUSTER
-  {0x181, 0, 32}, // CAM_0x181
 };
 
 
@@ -295,9 +294,8 @@ static int hyundai_canfd_fwd_hook(int bus_num, int addr) {
   }
   if (bus_num == 2) {
     // LKAS for HDA2, LFA for HDA1
-    int hda1_lfa_block_addr = 0x181;
     int hda2_lfa_block_addr = hyundai_canfd_hda2_alt_steering ? 0x362 : 0x2a4;
-    bool is_lkas_msg = (((addr == hyundai_canfd_hda2_get_lkas_addr()) || (addr == hda2_lfa_block_addr)) && hyundai_canfd_hda2) || (addr == hda1_lfa_block_addr);
+    bool is_lkas_msg = ((addr == hyundai_canfd_hda2_get_lkas_addr()) || (addr == hda2_lfa_block_addr)) && hyundai_canfd_hda2;
     bool is_lfa_msg = ((addr == 0x12a) && !hyundai_canfd_hda2);
 
     // HUD icons

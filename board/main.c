@@ -207,6 +207,11 @@ static void tick_handler(void) {
         heartbeat_engaged_mismatches = 0U;
       }
 
+      // MADS: check lateral heartbeat mismatch
+      if (m_mads_state.system_enabled) {
+        mads_heartbeat_engaged_check();
+      }
+
       if (!heartbeat_disabled) {
         // if the heartbeat has been gone for a while, go to SILENT safety mode and enter power save
         if (heartbeat_counter >= (started ? HEARTBEAT_IGNITION_CNT_ON : HEARTBEAT_IGNITION_CNT_OFF)) {
